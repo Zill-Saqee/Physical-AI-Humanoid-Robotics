@@ -2,6 +2,14 @@ import { themes as prismThemes } from 'prism-react-renderer';
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
+// Load environment variables for chatbot configuration
+const chatbotConfig = {
+  qdrantUrl: process.env.QDRANT_URL || '',
+  groqApiKey: process.env.GROQ_API_KEY || '',
+  groqModel: process.env.GROQ_MODEL || 'llama3-8b-8192',
+  debugMode: process.env.CHATBOT_DEBUG === 'true',
+};
+
 const config: Config = {
   title: 'Physical AI & Humanoid Robotics',
   tagline: 'An Interactive Textbook for the Future of Robotics',
@@ -27,6 +35,10 @@ const config: Config = {
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
+  },
+
+  customFields: {
+    chatbot: chatbotConfig,
   },
 
   presets: [

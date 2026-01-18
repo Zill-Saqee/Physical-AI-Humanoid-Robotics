@@ -212,6 +212,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 ## Active Technologies
 - TypeScript 5.x, Node.js 20 LTS + Docusaurus 3.x (React 18), @docusaurus/preset-classic (001-textbook-generation)
 - Browser localStorage (reading progress), Service Worker cache (offline) (001-textbook-generation)
+- TypeScript 5.x, Node.js 20 LTS + React 18 (Docusaurus), @qdrant/js-client-rest, groq-sdk, sentence-transformers (build-time) (002-rag-chatbot)
+- Qdrant Cloud (vectors), Browser sessionStorage (conversation) (002-rag-chatbot)
 
 ## Recent Changes
 - 001-textbook-generation: Added TypeScript 5.x, Node.js 20 LTS + Docusaurus 3.x (React 18), @docusaurus/preset-classic

@@ -1,0 +1,228 @@
+/**
+ * Chat Service
+ * Feature: 002-rag-chatbot
+ *
+ * Orchestrates the RAG pipeline: embedding, retrieval, and generation.
+ */
+
+import Groq from 'groq-sdk';
+import { generateEmbedding } from './embeddings';
+import {
+  searchSimilarChunks,
+  toSourceReferences,
+  SIMILARITY_THRESHOLD,
+} from './qdrant';
+import type {
+  Message,
+  SourceReference,
+  TextChunk,
+  ChatRequest,
+} from '../src/types/chat';
+
+// Configuration
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama3-8b-8192';
+
+// Lazy-initialized Groq client
+let groqClient: Groq | null = null;
+
+/**
+ * Get or create Groq client
+ */
+function getGroqClient(): Groq {
+  if (!groqClient) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY environment variable is required');
+    }
+    groqClient = new Groq({ apiKey });
+  }
+  return groqClient;
+}
+
+/**
+ * Build system prompt with context chunks
+ */
+function buildSystemPrompt(
+  chunks: Array<TextChunk & { score: number }>
+): string {
+  if (chunks.length === 0) {
+    return `You are a helpful assistant for the Physical AI & Humanoid Robotics textbook.
+However, you could not find any relevant information in the textbook to answer the user's question.
+Please politely explain that the question appears to be outside the scope of this textbook,
+and suggest they rephrase their question or ask about topics covered in the textbook such as:
+- Physical AI concepts and embodied intelligence
+- Humanoid robotics fundamentals
+- Sensors and perception systems
+- Actuators and movement control
+- AI/ML integration in robotics
+- Real-world applications and case studies`;
+  }
+
+  const contextText = chunks
+    .map(
+      (chunk) =>
+        `[Source: Chapter ${chunk.chapterNumber} - ${chunk.sectionTitle}]\n${chunk.content}`
+    )
+    .join('\n\n---\n\n');
+
+  return `You are a helpful assistant for the Physical AI & Humanoid Robotics textbook.
+Answer questions based ONLY on the following context from the textbook.
+Always cite the source chapters when providing information.
+If the context doesn't contain enough information to fully answer, say so.
+Be concise but thorough.
+
+CONTEXT:
+${contextText}
+
+INSTRUCTIONS:
+1. Answer based on the context above
+2. Cite relevant chapters (e.g., "According to Chapter 1...")
+3. If unsure, say "Based on the available information..."
+4. Keep responses focused and educational`;
+}
+
+/**
+ * Build conversation messages for the API
+ */
+function buildMessages(
+  systemPrompt: string,
+  query: string,
+  history?: Message[]
+): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+  const messages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }> = [{ role: 'system', content: systemPrompt }];
+
+  // Add conversation history (max 10 messages)
+  if (history && history.length > 0) {
+    const recentHistory = history.slice(-10);
+    for (const msg of recentHistory) {
+      messages.push({
+        role: msg.role,
+        content: msg.content,
+      });
+    }
+  }
+
+  // Add current query
+  messages.push({ role: 'user', content: query });
+
+  return messages;
+}
+
+/**
+ * Out-of-scope response template
+ */
+const OUT_OF_SCOPE_RESPONSE = `I apologize, but I couldn't find relevant information in the Physical AI & Humanoid Robotics textbook to answer your question.
+
+This textbook covers topics such as:
+• Physical AI and embodied intelligence concepts
+• Humanoid robotics fundamentals and design
+• Sensors and perception systems
+• Actuators and movement control
+• AI/ML integration in robotics
+• Real-world applications and case studies
+
+Please try rephrasing your question or ask about one of these topics!`;
+
+/**
+ * Process a chat request and return streaming response
+ */
+export async function* processChat(
+  request: ChatRequest
+): AsyncGenerator<
+  { type: 'token'; content: string } | { type: 'sources'; sources: SourceReference[] } | { type: 'done' } | { type: 'error'; message: string; code: string }
+> {
+  try {
+    // Generate query embedding
+    const queryEmbedding = await generateEmbedding(request.query);
+
+    // Search for relevant chunks
+    const chunks = await searchSimilarChunks(queryEmbedding);
+
+    // Convert to source references
+    const sources = toSourceReferences(chunks);
+
+    // Check if query is out of scope
+    if (chunks.length === 0 || chunks[0].score < SIMILARITY_THRESHOLD) {
+      // Stream out-of-scope response
+      const words = OUT_OF_SCOPE_RESPONSE.split(' ');
+      for (const word of words) {
+        yield { type: 'token', content: word + ' ' };
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      yield { type: 'done' };
+      return;
+    }
+
+    // Build prompt with context
+    const systemPrompt = buildSystemPrompt(chunks);
+    const messages = buildMessages(
+      systemPrompt,
+      request.query,
+      request.conversationHistory
+    );
+
+    // Get Groq client and stream response
+    const client = getGroqClient();
+    const stream = await client.chat.completions.create({
+      model: GROQ_MODEL,
+      messages,
+      stream: true,
+      max_tokens: 1024,
+      temperature: 0.7,
+    });
+
+    // Stream tokens
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        yield { type: 'token', content };
+      }
+    }
+
+    // Send sources after content
+    if (sources.length > 0) {
+      yield { type: 'sources', sources };
+    }
+
+    yield { type: 'done' };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'An error occurred';
+
+    // Determine error code
+    let code = 'SERVICE_ERROR';
+    if (message.includes('rate')) {
+      code = 'RATE_LIMIT';
+    } else if (message.includes('timeout')) {
+      code = 'TIMEOUT';
+    }
+
+    yield { type: 'error', message, code };
+  }
+}
+
+/**
+ * Non-streaming chat for testing
+ */
+export async function chat(request: ChatRequest): Promise<{
+  content: string;
+  sources: SourceReference[];
+}> {
+  let content = '';
+  let sources: SourceReference[] = [];
+
+  for await (const event of processChat(request)) {
+    if (event.type === 'token') {
+      content += event.content;
+    } else if (event.type === 'sources') {
+      sources = event.sources;
+    } else if (event.type === 'error') {
+      throw new Error(event.message);
+    }
+  }
+
+  return { content, sources };
+}
