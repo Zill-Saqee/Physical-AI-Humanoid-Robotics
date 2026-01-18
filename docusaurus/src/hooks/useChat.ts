@@ -3,6 +3,7 @@
  * Feature: 002-rag-chatbot
  *
  * Manages chat state, API calls, and streaming responses.
+ * Supports text selection for contextual Q&A.
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -13,10 +14,7 @@ import type {
   Message,
   SourceReference,
 } from '../types/chat';
-import {
-  DEFAULT_CHAT_CONFIG,
-  CHAT_STORAGE_KEYS,
-} from '../types/chat';
+import { DEFAULT_CHAT_CONFIG, CHAT_STORAGE_KEYS } from '../types/chat';
 
 // Create an empty conversation
 function createEmptyConversation(): Conversation {
@@ -67,6 +65,7 @@ export function useChat(): UseChatResult {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedText, setSelectedText] = useState<string | null>(null);
   const lastRequestTime = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -83,7 +82,11 @@ export function useChat(): UseChatResult {
   }, [conversation]);
 
   const addMessage = useCallback(
-    (role: 'user' | 'assistant', content: string, sources?: SourceReference[]) => {
+    (
+      role: 'user' | 'assistant',
+      content: string,
+      sources?: SourceReference[]
+    ) => {
       const message: Message = {
         id: uuidv4(),
         role,
@@ -122,7 +125,7 @@ export function useChat(): UseChatResult {
   );
 
   const sendMessage = useCallback(
-    async (query: string): Promise<void> => {
+    async (query: string, textSelection?: string): Promise<void> => {
       // Rate limiting
       const now = Date.now();
       const timeSinceLastRequest = now - lastRequestTime.current;
@@ -150,11 +153,17 @@ export function useChat(): UseChatResult {
       setIsLoading(true);
       lastRequestTime.current = now;
 
-      // Add user message
-      addMessage('user', trimmedQuery);
+      // Use passed text selection or current state
+      const contextText = textSelection || selectedText;
+
+      // Add user message (include context indicator if selected text)
+      const displayQuery = contextText
+        ? `[About selected text] ${trimmedQuery}`
+        : trimmedQuery;
+      addMessage('user', displayQuery);
 
       // Create placeholder assistant message
-      addMessage('assistant', '');
+      const assistantMessage = addMessage('assistant', '');
 
       // Abort any previous request
       if (abortControllerRef.current) {
@@ -176,6 +185,9 @@ export function useChat(): UseChatResult {
           body: JSON.stringify({
             query: trimmedQuery,
             conversationHistory: contextMessages,
+            selectedText: contextText || undefined,
+            conversationId: conversation.id,
+            messageId: assistantMessage.id,
           }),
           signal: abortControllerRef.current.signal,
         });
@@ -215,12 +227,15 @@ export function useChat(): UseChatResult {
                 } else if (data.type === 'error') {
                   throw new Error(data.message || 'An error occurred');
                 }
-              } catch (e) {
+              } catch {
                 // Ignore JSON parse errors for incomplete chunks
               }
             }
           }
         }
+
+        // Clear selected text after successful send
+        setSelectedText(null);
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') {
           // Request was cancelled, don't show error
@@ -241,7 +256,7 @@ export function useChat(): UseChatResult {
         abortControllerRef.current = null;
       }
     },
-    [conversation.messages, addMessage, updateLastMessage]
+    [conversation, selectedText, addMessage, updateLastMessage]
   );
 
   const retryLastMessage = useCallback(async (): Promise<void> => {
@@ -274,13 +289,18 @@ export function useChat(): UseChatResult {
     // Wait a tick for state to update
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // Resend the message
-    await sendMessage(lastUserMessage.content);
+    // Resend the message (strip the context indicator if present)
+    const originalQuery = lastUserMessage.content.replace(
+      /^\[About selected text\] /,
+      ''
+    );
+    await sendMessage(originalQuery);
   }, [conversation.messages, sendMessage]);
 
   const clearConversation = useCallback((): void => {
     setConversation(createEmptyConversation());
     setError(null);
+    setSelectedText(null);
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(CHAT_STORAGE_KEYS.CONVERSATION);
     }
@@ -290,6 +310,8 @@ export function useChat(): UseChatResult {
     conversation,
     isLoading,
     error,
+    selectedText,
+    setSelectedText,
     sendMessage,
     retryLastMessage,
     clearConversation,

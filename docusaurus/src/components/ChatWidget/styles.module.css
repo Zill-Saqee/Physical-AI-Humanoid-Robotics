@@ -449,3 +449,31 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* =============================================================================
+   Selected Text Context
+   ============================================================================= */
+
+.selectedTextContext {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: var(--ifm-color-primary-lightest, #e8f4fd);
+  border-left: 3px solid var(--ifm-color-primary);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.contextLabel {
+  font-weight: 600;
+  color: var(--ifm-color-primary-dark);
+}
+
+.contextText {
+  color: var(--ifm-color-emphasis-700);
+  font-style: italic;
+  line-height: 1.4;
+  word-break: break-word;
+}

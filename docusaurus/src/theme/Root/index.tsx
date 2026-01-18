@@ -2,9 +2,15 @@ import React, { lazy, Suspense } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import OfflineIndicator from '@site/src/components/OfflineIndicator';
 import { useOnlineStatus } from '@site/src/hooks/useOnlineStatus';
+import { ChatProvider, useChatContext } from '@site/src/context/ChatContext';
 
-// Lazy load ChatWidget to improve initial page load
-const ChatWidget = lazy(() => import('@site/src/components/ChatWidget'));
+// Lazy load components to improve initial page load
+const ChatWidgetInner = lazy(
+  () => import('@site/src/components/ChatWidget/ChatWidgetInner')
+);
+const TextSelectionPopover = lazy(
+  () => import('@site/src/components/TextSelectionPopover')
+);
 
 interface RootProps {
   children: React.ReactNode;
@@ -18,8 +24,27 @@ function OfflineStatusWrapper(): React.ReactElement | null {
 function ChatWidgetWrapper(): React.ReactElement {
   return (
     <Suspense fallback={null}>
-      <ChatWidget />
+      <ChatWidgetInner />
     </Suspense>
+  );
+}
+
+function TextSelectionWrapper(): React.ReactElement {
+  const { askAboutSelection } = useChatContext();
+
+  return (
+    <Suspense fallback={null}>
+      <TextSelectionPopover onAskAboutSelection={askAboutSelection} />
+    </Suspense>
+  );
+}
+
+function ChatComponents(): React.ReactElement {
+  return (
+    <ChatProvider>
+      <ChatWidgetWrapper />
+      <TextSelectionWrapper />
+    </ChatProvider>
   );
 }
 
@@ -28,7 +53,7 @@ export default function Root({ children }: RootProps): React.ReactElement {
     <>
       {children}
       <BrowserOnly>{() => <OfflineStatusWrapper />}</BrowserOnly>
-      <BrowserOnly>{() => <ChatWidgetWrapper />}</BrowserOnly>
+      <BrowserOnly>{() => <ChatComponents />}</BrowserOnly>
     </>
   );
 }

@@ -3,15 +3,17 @@
  * Feature: 002-rag-chatbot
  *
  * Orchestrates the RAG pipeline: embedding, retrieval, and generation.
+ * Uses OpenAI for LLM responses and Neon Postgres for persistence.
  */
 
-import Groq from 'groq-sdk';
+import OpenAI from 'openai';
 import { generateEmbedding } from './embeddings';
 import {
   searchSimilarChunks,
   toSourceReferences,
   SIMILARITY_THRESHOLD,
 } from './qdrant';
+import { saveMessage } from './db';
 import type {
   Message,
   SourceReference,
@@ -20,31 +22,58 @@ import type {
 } from '../src/types/chat';
 
 // Configuration
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama3-8b-8192';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-// Lazy-initialized Groq client
-let groqClient: Groq | null = null;
+// Lazy-initialized OpenAI client
+let openaiClient: OpenAI | null = null;
 
 /**
- * Get or create Groq client
+ * Get or create OpenAI client
  */
-function getGroqClient(): Groq {
-  if (!groqClient) {
-    const apiKey = process.env.GROQ_API_KEY;
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('GROQ_API_KEY environment variable is required');
+      throw new Error('OPENAI_API_KEY environment variable is required');
     }
-    groqClient = new Groq({ apiKey });
+    openaiClient = new OpenAI({ apiKey });
   }
-  return groqClient;
+  return openaiClient;
 }
 
 /**
- * Build system prompt with context chunks
+ * Build system prompt with context chunks and optional selected text
  */
 function buildSystemPrompt(
-  chunks: Array<TextChunk & { score: number }>
+  chunks: Array<TextChunk & { score: number }>,
+  selectedText?: string
 ): string {
+  // Handle selected text context
+  if (selectedText && selectedText.trim()) {
+    const contextText = chunks.length > 0
+      ? chunks
+          .map(
+            (chunk) =>
+              `[Source: Chapter ${chunk.chapterNumber} - ${chunk.sectionTitle}]\n${chunk.content}`
+          )
+          .join('\n\n---\n\n')
+      : '';
+
+    return `You are a helpful assistant for the Physical AI & Humanoid Robotics textbook.
+The user has selected the following text from the textbook and wants to ask about it:
+
+SELECTED TEXT:
+"${selectedText}"
+
+${contextText ? `ADDITIONAL CONTEXT:\n${contextText}\n\n` : ''}INSTRUCTIONS:
+1. Answer questions specifically about the selected text
+2. Provide explanations, clarifications, or deeper insights
+3. If the question relates to concepts in the selected text, explain them
+4. Cite chapter sources when available
+5. Be educational and thorough`;
+  }
+
+  // Handle no relevant chunks found
   if (chunks.length === 0) {
     return `You are a helpful assistant for the Physical AI & Humanoid Robotics textbook.
 However, you could not find any relevant information in the textbook to answer the user's question.
@@ -58,6 +87,7 @@ and suggest they rephrase their question or ask about topics covered in the text
 - Real-world applications and case studies`;
   }
 
+  // Standard RAG context
   const contextText = chunks
     .map(
       (chunk) =>
@@ -127,58 +157,96 @@ This textbook covers topics such as:
 Please try rephrasing your question or ask about one of these topics!`;
 
 /**
+ * Extended chat request with optional selected text
+ */
+export interface ExtendedChatRequest extends ChatRequest {
+  selectedText?: string;
+  conversationId?: string;
+  messageId?: string;
+}
+
+/**
  * Process a chat request and return streaming response
  */
 export async function* processChat(
-  request: ChatRequest
+  request: ExtendedChatRequest
 ): AsyncGenerator<
-  { type: 'token'; content: string } | { type: 'sources'; sources: SourceReference[] } | { type: 'done' } | { type: 'error'; message: string; code: string }
+  | { type: 'token'; content: string }
+  | { type: 'sources'; sources: SourceReference[] }
+  | { type: 'done' }
+  | { type: 'error'; message: string; code: string }
 > {
   try {
-    // Generate query embedding
-    const queryEmbedding = await generateEmbedding(request.query);
+    let chunks: Array<TextChunk & { score: number }> = [];
+    let sources: SourceReference[] = [];
 
-    // Search for relevant chunks
-    const chunks = await searchSimilarChunks(queryEmbedding);
+    // If selected text is provided, use it as primary context
+    if (request.selectedText && request.selectedText.trim()) {
+      // Also search for related chunks for additional context
+      const queryEmbedding = await generateEmbedding(request.selectedText);
+      chunks = await searchSimilarChunks(queryEmbedding, 2);
+      sources = toSourceReferences(chunks);
+    } else {
+      // Standard RAG: generate query embedding and search
+      const queryEmbedding = await generateEmbedding(request.query);
+      chunks = await searchSimilarChunks(queryEmbedding);
+      sources = toSourceReferences(chunks);
 
-    // Convert to source references
-    const sources = toSourceReferences(chunks);
-
-    // Check if query is out of scope
-    if (chunks.length === 0 || chunks[0].score < SIMILARITY_THRESHOLD) {
-      // Stream out-of-scope response
-      const words = OUT_OF_SCOPE_RESPONSE.split(' ');
-      for (const word of words) {
-        yield { type: 'token', content: word + ' ' };
-        await new Promise((resolve) => setTimeout(resolve, 20));
+      // Check if query is out of scope
+      if (chunks.length === 0 || chunks[0].score < SIMILARITY_THRESHOLD) {
+        // Stream out-of-scope response
+        const words = OUT_OF_SCOPE_RESPONSE.split(' ');
+        for (const word of words) {
+          yield { type: 'token', content: word + ' ' };
+          await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+        yield { type: 'done' };
+        return;
       }
-      yield { type: 'done' };
-      return;
     }
 
     // Build prompt with context
-    const systemPrompt = buildSystemPrompt(chunks);
+    const systemPrompt = buildSystemPrompt(chunks, request.selectedText);
     const messages = buildMessages(
       systemPrompt,
       request.query,
       request.conversationHistory
     );
 
-    // Get Groq client and stream response
-    const client = getGroqClient();
+    // Get OpenAI client and stream response
+    const client = getOpenAIClient();
     const stream = await client.chat.completions.create({
-      model: GROQ_MODEL,
+      model: OPENAI_MODEL,
       messages,
       stream: true,
       max_tokens: 1024,
       temperature: 0.7,
     });
 
+    let fullContent = '';
+
     // Stream tokens
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       if (content) {
+        fullContent += content;
         yield { type: 'token', content };
+      }
+    }
+
+    // Save message to database if conversation ID provided
+    if (request.conversationId && request.messageId) {
+      try {
+        await saveMessage(
+          request.conversationId,
+          request.messageId,
+          'assistant',
+          fullContent,
+          sources
+        );
+      } catch (dbError) {
+        console.warn('Failed to save message to database:', dbError);
+        // Don't fail the request if DB save fails
       }
     }
 
@@ -207,7 +275,7 @@ export async function* processChat(
 /**
  * Non-streaming chat for testing
  */
-export async function chat(request: ChatRequest): Promise<{
+export async function chat(request: ExtendedChatRequest): Promise<{
   content: string;
   sources: SourceReference[];
 }> {

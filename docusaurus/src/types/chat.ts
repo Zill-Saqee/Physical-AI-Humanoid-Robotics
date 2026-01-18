@@ -96,6 +96,12 @@ export interface ChatRequest {
   query: string;
   /** Previous messages for context (max 10) */
   conversationHistory?: Message[];
+  /** Text selected by user for contextual Q&A */
+  selectedText?: string;
+  /** Conversation ID for persistence */
+  conversationId?: string;
+  /** Message ID for persistence */
+  messageId?: string;
 }
 
 /**
@@ -186,6 +192,8 @@ export interface ChatPanelProps {
   onClose: () => void;
   /** Handler to retry last message */
   onRetry?: () => void;
+  /** Currently selected text for context */
+  selectedText?: string | null;
 }
 
 /**
@@ -262,8 +270,12 @@ export interface UseChatResult {
   isLoading: boolean;
   /** Current error if any */
   error: string | null;
-  /** Send a message */
-  sendMessage: (query: string) => Promise<void>;
+  /** Currently selected text for contextual Q&A */
+  selectedText: string | null;
+  /** Set selected text for contextual Q&A */
+  setSelectedText: (text: string | null) => void;
+  /** Send a message (optionally with selected text context) */
+  sendMessage: (query: string, selectedText?: string) => Promise<void>;
   /** Retry last failed message */
   retryLastMessage: () => Promise<void>;
   /** Clear conversation history */

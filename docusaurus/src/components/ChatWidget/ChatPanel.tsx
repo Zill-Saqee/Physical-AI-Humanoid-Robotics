@@ -20,6 +20,7 @@ export function ChatPanel({
   onSendMessage,
   onClose,
   onRetry,
+  selectedText,
 }: ChatPanelProps): React.ReactElement {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = React.useState('');
@@ -116,12 +117,20 @@ export function ChatPanel({
       </div>
 
       <div className={styles.inputContainer}>
+        {selectedText && (
+          <div className={styles.selectedTextContext}>
+            <span className={styles.contextLabel}>Asking about:</span>
+            <span className={styles.contextText}>
+              "{selectedText.length > 100 ? selectedText.slice(0, 100) + '...' : selectedText}"
+            </span>
+          </div>
+        )}
         <ChatInput
           value={inputValue}
           onChange={setInputValue}
           onSubmit={handleSubmit}
           disabled={isLoading}
-          placeholder="Ask a question..."
+          placeholder={selectedText ? "Ask about the selected text..." : "Ask a question..."}
           maxLength={1000}
         />
       </div>
