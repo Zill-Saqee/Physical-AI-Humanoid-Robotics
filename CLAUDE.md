@@ -208,3 +208,10 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+
+## Active Technologies
+- TypeScript 5.x, Node.js 20 LTS + Docusaurus 3.x (React 18), @docusaurus/preset-classic (001-textbook-generation)
+- Browser localStorage (reading progress), Service Worker cache (offline) (001-textbook-generation)
+
+## Recent Changes
+- 001-textbook-generation: Added TypeScript 5.x, Node.js 20 LTS + Docusaurus 3.x (React 18), @docusaurus/preset-classic

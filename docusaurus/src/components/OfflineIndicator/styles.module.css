@@ -1,0 +1,39 @@
+.offlineIndicator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--ifm-color-warning-contrast-background);
+  border-top: 2px solid var(--ifm-color-warning-dark);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  z-index: 1000;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.offlineIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.offlineText {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ifm-color-warning-contrast-foreground);
+}
+
+@media screen and (max-width: 480px) {
+  .offlineIndicator {
+    padding: 0.5rem 0.75rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .offlineText {
+    font-size: 0.8rem;
+    text-align: center;
+  }
+}

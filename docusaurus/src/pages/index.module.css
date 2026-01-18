@@ -1,0 +1,111 @@
+/**
+ * Homepage styles for Physical AI Textbook
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress Section */
+.progressSection {
+  padding: 1.5rem 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Chapter List Section */
+.chapters {
+  padding: 3rem 0;
+  background: var(--ifm-background-surface-color);
+}
+
+.chaptersTitle {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.chaptersSubtitle {
+  text-align: center;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 2rem;
+}
+
+.chapterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.chapterCard {
+  display: block;
+  padding: 1.5rem;
+  background: var(--ifm-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chapterCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+}
+
+.chapterNumber {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.chapterTitle {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--ifm-heading-color);
+}
+
+.chapterDescription {
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-700);
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+.chapterTime {
+  font-size: 0.8rem;
+  color: var(--ifm-color-emphasis-500);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+@media screen and (max-width: 768px) {
+  .chapterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chapters {
+    padding: 2rem 0;
+  }
+}
