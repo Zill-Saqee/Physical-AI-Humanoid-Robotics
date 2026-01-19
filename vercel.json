@@ -4,16 +4,10 @@
   "outputDirectory": "frontend/build",
   "installCommand": "cd frontend && npm install",
   "functions": {
-    "backend/chat.ts": {
+    "api/chat.ts": {
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/chat",
-      "destination": "/backend/chat"
-    }
-  ],
   "headers": [
     {
       "source": "/sw.js",
