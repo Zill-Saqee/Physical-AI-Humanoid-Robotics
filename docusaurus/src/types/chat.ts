@@ -317,10 +317,27 @@ export interface ChatConfig {
 }
 
 /**
+ * Get API endpoint based on environment
+ * - Development: http://localhost:3001/api/chat (local Express server)
+ * - Production: /api/chat (Vercel serverless function)
+ */
+function getApiEndpoint(): string {
+  // In browser, check if running locally
+  if (typeof window !== 'undefined') {
+    const isLocal =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+    return isLocal ? 'http://localhost:3001/api/chat' : '/api/chat';
+  }
+  // Server-side default
+  return '/api/chat';
+}
+
+/**
  * Default configuration values
  */
 export const DEFAULT_CHAT_CONFIG: ChatConfig = {
-  apiEndpoint: 'http://localhost:3001/api/chat',
+  apiEndpoint: getApiEndpoint(),
   maxContextMessages: 10,
   maxQueryLength: 1000,
   responseTimeout: 5000,
