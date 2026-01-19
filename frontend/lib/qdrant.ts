@@ -68,6 +68,17 @@ export async function searchSimilarChunks(
   }));
 }
 
+// Chapter number to slug mapping
+const CHAPTER_SLUGS: Record<number, string> = {
+  0: 'intro',
+  1: 'chapter-1-physical-ai-introduction',
+  2: 'chapter-2-humanoid-robotics-fundamentals',
+  3: 'chapter-3-sensors-perception',
+  4: 'chapter-4-actuators-movement',
+  5: 'chapter-5-ai-ml-integration',
+  6: 'chapter-6-applications-case-studies',
+};
+
 /**
  * Convert search results to source references for display
  */
@@ -78,7 +89,7 @@ export function toSourceReferences(
     chunkId: chunk.id,
     chapterNumber: chunk.chapterNumber,
     sectionTitle: chunk.sectionTitle,
-    url: `/chapter-${chunk.chapterNumber}-${chunk.sectionId.replace(/\./g, '-')}`,
+    url: `/${CHAPTER_SLUGS[chunk.chapterNumber] || `chapter-${chunk.chapterNumber}`}`,
     relevanceScore: chunk.score,
   }));
 }
