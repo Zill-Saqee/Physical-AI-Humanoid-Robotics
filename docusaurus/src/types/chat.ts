@@ -320,7 +320,7 @@ export interface ChatConfig {
  * Default configuration values
  */
 export const DEFAULT_CHAT_CONFIG: ChatConfig = {
-  apiEndpoint: '/api/chat',
+  apiEndpoint: 'http://localhost:3001/api/chat',
   maxContextMessages: 10,
   maxQueryLength: 1000,
   responseTimeout: 5000,

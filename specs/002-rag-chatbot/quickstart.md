@@ -9,7 +9,7 @@
 - npm 10+ or yarn 4+
 - Existing Docusaurus textbook from 001-textbook-generation
 - Qdrant Cloud account (free tier)
-- Groq API key (free tier)
+- OpenAI API key
 
 ## Initial Setup
 
@@ -22,11 +22,14 @@ Create `.env.local` in the `docusaurus/` directory:
 QDRANT_URL=https://your-cluster.cloud.qdrant.io
 QDRANT_API_KEY=your-qdrant-api-key
 
-# Groq API
-GROQ_API_KEY=your-groq-api-key
+# OpenAI API
+OPENAI_API_KEY=your-openai-api-key
 
-# Optional: Custom model
-GROQ_MODEL=llama3-8b-8192
+# Optional: Custom model (defaults to gpt-4o-mini)
+OPENAI_MODEL=gpt-4o-mini
+
+# Optional: Neon PostgreSQL for conversation persistence
+DATABASE_URL=postgres://...
 ```
 
 ### 2. Install Dependencies
@@ -34,8 +37,8 @@ GROQ_MODEL=llama3-8b-8192
 ```bash
 cd docusaurus
 
-# Install chatbot dependencies
-npm install @qdrant/js-client-rest groq-sdk uuid
+# Install all dependencies (chatbot deps already in package.json)
+npm install
 ```
 
 ### 3. Generate Embeddings
@@ -55,8 +58,13 @@ This script:
 ### 4. Start Development Server
 
 ```bash
-npm run start
+# Run both Docusaurus and API server concurrently
+npm run dev
 ```
+
+This starts:
+- Docusaurus at `http://localhost:3000`
+- Chat API server at `http://localhost:3001`
 
 Open `http://localhost:3000` and click the chat button in the bottom-right corner.
 
@@ -79,9 +87,15 @@ docusaurus/
 │   │   └── useChatWidget.ts     # Widget open/close state
 │   ├── theme/
 │   │   └── Root/index.tsx       # Widget injection point
-│   └── pages/
-│       └── api/
-│           └── chat.ts          # Serverless chat endpoint
+│   └── types/
+│       └── chat.ts              # TypeScript interfaces
+├── server/
+│   └── api.ts                   # Express API server
+├── lib/
+│   ├── chat-service.ts          # RAG orchestration
+│   ├── embeddings.ts            # MiniLM embedding generation
+│   ├── qdrant.ts                # Qdrant client wrapper
+│   └── chunker.ts               # Content chunking
 ├── scripts/
 │   └── index-content.ts         # Embedding generation script
 └── .env.local                   # Environment variables
@@ -139,7 +153,7 @@ Simulate offline mode in Chrome DevTools:
 1. **Simplicity-First**: Keep components minimal and focused
 2. **Mobile-First**: Test on mobile viewport first
 3. **RAG-Grounded**: Never generate responses without source context
-4. **Free-Tier**: Stay within Qdrant and Groq free tier limits
+4. **Cost-Aware**: Monitor OpenAI API usage
 
 ### Code Style
 
@@ -163,14 +177,18 @@ Before PR:
 ### "No response from server"
 
 Check:
-1. Groq API key is valid
+1. OpenAI API key is valid
 2. Qdrant cluster is active (not suspended)
-3. Network connectivity
+3. API server is running on port 3001
+4. Network connectivity
 
 ```bash
+# Test API health endpoint
+curl http://localhost:3001/api/health
+
 # Test Qdrant connection
 curl -H "api-key: $QDRANT_API_KEY" \
-  "$QDRANT_URL/collections/textbook_chunks"
+  "$QDRANT_URL/collections/textbook"
 ```
 
 ### "No relevant sources found"
@@ -189,16 +207,19 @@ Free tier clusters suspend after 1 week of inactivity:
 
 ### Rate limit errors
 
-Groq free tier has rate limits:
+OpenAI has rate limits:
 1. Wait 60 seconds
 2. Reduce request frequency
 3. Consider response caching for common questions
+4. Check your API usage limits at platform.openai.com
 
 ## Useful Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run start` | Start dev server |
+| `npm run dev` | Start Docusaurus + API server |
+| `npm run start` | Start Docusaurus only |
+| `npm run api` | Start API server only |
 | `npm run chatbot:index` | Index textbook content |
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript type checking |

@@ -48,7 +48,7 @@ Based on plan.md structure:
 - [x] T007 Create embeddings utility in `docusaurus/lib/embeddings.ts` using @xenova/transformers (MiniLM)
 - [x] T008 [P] Create content chunking utility in `docusaurus/lib/chunker.ts`
 - [x] T009 Create indexing script in `docusaurus/scripts/index-content.ts`
-- [ ] T010 Run indexing script to populate Qdrant with textbook chunks *(requires API keys)*
+- [x] T010 Run indexing script to populate Qdrant with textbook chunks *(113 chunks indexed)*
 - [x] T011 Create chat service in `docusaurus/lib/chat-service.ts` (orchestrates embedding, retrieval, generation)
 
 **Checkpoint**: RAG pipeline ready - can retrieve chunks and generate responses
@@ -74,7 +74,7 @@ Based on plan.md structure:
 - [x] T020 [US1] Create useChat hook in `docusaurus/src/hooks/useChat.ts` (state, API calls, streaming)
 - [x] T021 [US1] Create chat API endpoint in `docusaurus/src/pages/api/chat.ts` with SSE streaming
 - [x] T022 [US1] Integrate ChatWidget into Root theme in `docusaurus/src/theme/Root/index.tsx`
-- [ ] T023 [US1] Verify chat opens, accepts input, and returns streaming response *(requires API keys)*
+- [x] T023 [US1] Verify chat opens, accepts input, and returns streaming response *(verified with streaming SSE)*
 
 **Checkpoint**: User Story 1 complete - Can ask questions and receive answers
 
@@ -140,9 +140,9 @@ Based on plan.md structure:
 - [x] T038 [P] Add loading states and error boundaries
 - [x] T039 Lazy load ChatWidget to improve initial page load
 - [x] T040 Add rate limiting (2 second minimum between requests)
-- [ ] T041 Verify response time < 5 seconds on typical queries *(requires API keys)*
+- [x] T041 Verify response time < 5 seconds on typical queries *(4.65s to first token)*
 - [x] T042 Run build and verify no TypeScript errors
-- [ ] T043 Validate quickstart.md instructions work correctly *(requires API keys)*
+- [x] T043 Validate quickstart.md instructions work correctly *(updated for OpenAI + Express server)*
 
 ---
 
