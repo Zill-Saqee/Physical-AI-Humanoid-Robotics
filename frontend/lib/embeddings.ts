@@ -2,47 +2,45 @@
  * Embeddings Utility
  * Feature: 002-rag-chatbot
  *
- * Generates text embeddings using MiniLM-L6-v2 via transformers.js
+ * Generates text embeddings using OpenAI's text-embedding-3-small model.
+ * Works in Vercel serverless environment.
  */
 
-import { pipeline } from '@xenova/transformers';
+import OpenAI from 'openai';
 
 // Model configuration
-const MODEL_NAME = 'Xenova/all-MiniLM-L6-v2';
-const EMBEDDING_DIM = 384;
+const EMBEDDING_MODEL = 'text-embedding-3-small';
+export const EMBEDDING_DIM = 1536;
 
-// Type for feature extraction pipeline result
-type FeatureExtractionPipeline = Awaited<ReturnType<typeof pipeline<'feature-extraction'>>>;
-
-// Lazy-loaded embedding pipeline
-let embeddingPipeline: FeatureExtractionPipeline | null = null;
+// Lazy-initialized OpenAI client
+let openaiClient: OpenAI | null = null;
 
 /**
- * Get or create the embedding pipeline
+ * Get or create OpenAI client
  */
-async function getEmbeddingPipeline(): Promise<FeatureExtractionPipeline> {
-  if (!embeddingPipeline) {
-    embeddingPipeline = await pipeline('feature-extraction', MODEL_NAME, {
-      quantized: true, // Use quantized model for faster inference
-    });
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is required');
+    }
+    openaiClient = new OpenAI({ apiKey });
   }
-  return embeddingPipeline;
+  return openaiClient;
 }
 
 /**
  * Generate embedding for a single text
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const pipe = await getEmbeddingPipeline();
+  const client = getOpenAIClient();
 
-  // Generate embedding
-  const output = await pipe(text, {
-    pooling: 'mean',
-    normalize: true,
+  const response = await client.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: text,
   });
 
-  // Convert tensor to array
-  const embedding = Array.from(output.data as Float32Array);
+  const embedding = response.data[0].embedding;
 
   if (embedding.length !== EMBEDDING_DIM) {
     throw new Error(
@@ -59,15 +57,15 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 export async function generateEmbeddings(
   texts: string[]
 ): Promise<number[][]> {
-  const embeddings: number[][] = [];
+  const client = getOpenAIClient();
 
-  // Process texts one at a time to avoid memory issues
-  for (const text of texts) {
-    const embedding = await generateEmbedding(text);
-    embeddings.push(embedding);
-  }
+  // OpenAI supports batch embedding
+  const response = await client.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: texts,
+  });
 
-  return embeddings;
+  return response.data.map((item) => item.embedding);
 }
 
 /**
@@ -79,15 +77,16 @@ export function estimateTokenCount(text: string): number {
 }
 
 /**
- * Check if the embedding model is loaded
+ * Check if the embedding model is ready (always true for API-based)
  */
 export function isModelLoaded(): boolean {
-  return embeddingPipeline !== null;
+  return true;
 }
 
 /**
- * Preload the embedding model (useful for warming up)
+ * Preload check (no-op for API-based embeddings)
  */
 export async function preloadModel(): Promise<void> {
-  await getEmbeddingPipeline();
+  // No preloading needed for API-based embeddings
+  getOpenAIClient(); // Just validate the API key exists
 }

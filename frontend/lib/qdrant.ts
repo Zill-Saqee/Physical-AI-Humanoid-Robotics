@@ -10,8 +10,8 @@ import type { TextChunk, SourceReference } from '../src/types/chat';
 
 // Collection configuration
 export const COLLECTION_NAME = 'textbook_chunks';
-export const VECTOR_SIZE = 384; // MiniLM-L6-v2 dimension
-export const SIMILARITY_THRESHOLD = 0.5;
+export const VECTOR_SIZE = 1536; // OpenAI text-embedding-3-small dimension
+export const SIMILARITY_THRESHOLD = 0.3; // Lower threshold for OpenAI embeddings
 export const TOP_K = 3;
 
 // Lazy-initialized client instance

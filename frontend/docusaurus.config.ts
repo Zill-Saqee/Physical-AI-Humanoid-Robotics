@@ -22,8 +22,8 @@ const config: Config = {
   url: 'https://physical-ai-textbook.vercel.app',
   baseUrl: '/',
 
-  organizationName: 'piaic',
-  projectName: 'physical-ai-textbook',
+  organizationName: 'Zill-Saqee',
+  projectName: 'Physical-AI-Humanoid-Robotics',
 
   onBrokenLinks: 'throw',
   markdown: {
@@ -127,7 +127,7 @@ const config: Config = {
           label: 'Chapters',
         },
         {
-          href: 'https://github.com/piaic/physical-ai-textbook',
+          href: 'https://github.com/Zill-Saqee/Physical-AI-Humanoid-Robotics',
           label: 'GitHub',
           position: 'right',
         },
@@ -150,25 +150,16 @@ const config: Config = {
           ],
         },
         {
-          title: 'Community',
-          items: [
-            {
-              label: 'PIAIC',
-              href: 'https://piaic.org',
-            },
-          ],
-        },
-        {
           title: 'More',
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/piaic/physical-ai-textbook',
+              href: 'https://github.com/Zill-Saqee/Physical-AI-Humanoid-Robotics',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} PIAIC. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Physical AI Textbook. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,
