@@ -156,6 +156,10 @@ const config: Config = {
               label: 'GitHub',
               href: 'https://github.com/Zill-Saqee/Physical-AI-Humanoid-Robotics',
             },
+            {
+              label: 'LinkedIn',
+              href: 'https://www.linkedin.com/in/zill-saqee',
+            },
           ],
         },
       ],

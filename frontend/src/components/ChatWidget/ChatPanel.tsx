@@ -43,7 +43,6 @@ export function ChatPanel({
   const handleSourceClick = (source: { url: string }) => {
     // Use client-side navigation for smooth transitions
     history.push(source.url);
-    onClose(); // Close chat panel after navigation
   };
 
   return (
