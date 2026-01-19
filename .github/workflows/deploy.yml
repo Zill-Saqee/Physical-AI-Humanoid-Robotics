@@ -2,7 +2,7 @@ name: Deploy to Vercel
 
 on:
   push:
-    branches: [main, 002-rag-chatbot]
+    branches: [main]
   pull_request:
     branches: [main]
 
