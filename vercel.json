@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "docusaurus-2",
   "buildCommand": "cd docusaurus && npm install && npm run build",
   "outputDirectory": "docusaurus/build",
   "installCommand": "cd docusaurus && npm install",
@@ -44,16 +43,6 @@
           "value": "1; mode=block"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/chat",
-      "destination": "/api/chat"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
     }
   ]
 }
