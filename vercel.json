@@ -1,13 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd docusaurus && npm install && npm run build",
-  "outputDirectory": "docusaurus/build",
-  "installCommand": "cd docusaurus && npm install",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "installCommand": "cd frontend && npm install",
   "functions": {
-    "api/chat.ts": {
+    "backend/chat.ts": {
       "maxDuration": 30
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/chat",
+      "destination": "/backend/chat"
+    }
+  ],
   "headers": [
     {
       "source": "/sw.js",

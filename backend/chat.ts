@@ -7,8 +7,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { processChat } from '../docusaurus/lib/chat-service';
-import type { Message } from '../docusaurus/src/types/chat';
+import { processChat } from '../frontend/lib/chat-service';
+import type { Message } from '../frontend/src/types/chat';
 
 // CORS configuration
 const allowedOrigins = [
