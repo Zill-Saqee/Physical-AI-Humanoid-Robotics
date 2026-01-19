@@ -8,8 +8,12 @@
  * Usage: npm run chatbot:index
  */
 
+import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 import { chunkMarkdownFile } from '../lib/chunker';
 import { generateEmbedding, preloadModel } from '../lib/embeddings';
 import { ensureCollection, upsertChunks } from '../lib/qdrant';

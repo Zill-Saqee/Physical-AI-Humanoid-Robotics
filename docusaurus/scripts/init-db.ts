@@ -7,6 +7,12 @@
  * Usage: npx ts-node scripts/init-db.ts
  */
 
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
 import { initializeSchema, checkConnection } from '../lib/db';
 
 async function main(): Promise<void> {
