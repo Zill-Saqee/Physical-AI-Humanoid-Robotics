@@ -6,6 +6,7 @@
  */
 
 import React, { useRef, useEffect } from 'react';
+import { useHistory } from '@docusaurus/router';
 import type { ChatPanelProps } from '../../types/chat';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
@@ -24,6 +25,7 @@ export function ChatPanel({
 }: ChatPanelProps): React.ReactElement {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = React.useState('');
+  const history = useHistory();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -39,7 +41,9 @@ export function ChatPanel({
   };
 
   const handleSourceClick = (source: { url: string }) => {
-    window.location.href = source.url;
+    // Use client-side navigation for smooth transitions
+    history.push(source.url);
+    onClose(); // Close chat panel after navigation
   };
 
   return (

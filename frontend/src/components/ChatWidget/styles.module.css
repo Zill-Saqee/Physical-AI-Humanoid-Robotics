@@ -2,8 +2,49 @@
  * ChatWidget Styles
  * Feature: 002-rag-chatbot
  *
- * Mobile-first responsive design for chat widget.
+ * Mobile-first responsive design for chat widget with smooth animations.
  */
+
+/* =============================================================================
+   Animations
+   ============================================================================= */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 
 /* =============================================================================
    Chat Button (FAB)
@@ -13,33 +54,43 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: var(--ifm-color-primary);
+  background: linear-gradient(135deg, var(--ifm-color-primary), var(--ifm-color-primary-dark));
   color: white;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 102, 204, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
 }
 
 .chatButton:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 102, 204, 0.5);
+}
+
+.chatButton:active {
+  transform: scale(0.95);
 }
 
 .chatButton:focus {
-  outline: 2px solid var(--ifm-color-primary-dark);
-  outline-offset: 2px;
+  outline: 3px solid var(--ifm-color-primary-light);
+  outline-offset: 3px;
 }
 
 .chatButtonOpen {
-  background: var(--ifm-color-emphasis-700);
+  background: linear-gradient(135deg, var(--ifm-color-emphasis-600), var(--ifm-color-emphasis-700));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: rotate(45deg);
+}
+
+.chatButtonOpen:hover {
+  transform: rotate(45deg) scale(1.1);
 }
 
 .unreadBadge {
@@ -50,13 +101,14 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: #ef4444;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   font-size: 12px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 /* =============================================================================
@@ -65,19 +117,22 @@
 
 .chatPanel {
   position: fixed;
-  bottom: 88px;
+  bottom: 92px;
   right: 20px;
   width: calc(100vw - 40px);
-  max-width: 400px;
+  max-width: 420px;
   height: calc(100vh - 120px);
-  max-height: 600px;
+  max-height: 620px;
   background: var(--ifm-background-surface-color);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   z-index: 999;
   overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Mobile full-screen on small devices */
